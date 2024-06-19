@@ -170,6 +170,7 @@ const ThreeScene: React.FC = () => {
         style={{ display: "none" }}
         loop={false}
         muted={false}
+        playsInline={true}
         crossOrigin="anonymous"
         src="https://firebasestorage.googleapis.com/v0/b/coop-arena-web.appspot.com/o/videos%2Fice_2000x1000_25fps_02_wMusic_c.mp4?alt=media&token=0e2b2c8e-1548-49d3-a084-4c92a2ec890e"
       ></video>
