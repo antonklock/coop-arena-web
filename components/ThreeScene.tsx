@@ -4,25 +4,16 @@ import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader, OrbitControls } from "three/examples/jsm/Addons.js";
 import PlayIntroButton from "./PlayIntroButton";
-import { Howl } from "howler";
 
 const ThreeScene: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
 
-  const music = new Howl({
-    src: ["/audio/LHF-Intro-Musikskiss.mp3"],
-    loop: false,
-    volume: 0.5,
-    autoplay: false,
-  });
-
   // Add function that plays the videoRef
   const playVideo = () => {
     if (videoRef.current) {
       videoRef.current.play();
-      //   music.play();
       setPlaying(true);
       console.log("Play intro");
     }
@@ -33,7 +24,6 @@ const ThreeScene: React.FC = () => {
     if (videoRef.current) {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
-      music.stop();
       setPlaying(false);
       console.log("Stop intro");
     }
