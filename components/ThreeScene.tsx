@@ -4,16 +4,28 @@ import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader, OrbitControls } from "three/examples/jsm/Addons.js";
 import PlayIntroButton from "./PlayIntroButton";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const ThreeScene: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const iceVideoRef = useRef<HTMLVideoElement>(null);
+  const bigmapVideoRef = useRef<HTMLVideoElement>(null);
+  const yttreOvalVideoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
 
   // Add function that plays the videoRef
   const playVideo = () => {
-    if (videoRef.current) {
-      videoRef.current.play();
+    if (
+      iceVideoRef.current &&
+      bigmapVideoRef.current &&
+      yttreOvalVideoRef.current
+    ) {
+      iceVideoRef.current.play();
+      bigmapVideoRef.current.play();
+      yttreOvalVideoRef.current.play();
+
       setPlaying(true);
       console.log("Play intro");
     }
@@ -21,9 +33,20 @@ const ThreeScene: React.FC = () => {
 
   // Add stop video function
   const stopVideo = () => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
+    if (
+      iceVideoRef.current &&
+      bigmapVideoRef.current &&
+      yttreOvalVideoRef.current
+    ) {
+      iceVideoRef.current.pause();
+      iceVideoRef.current.currentTime = 0;
+
+      bigmapVideoRef.current.pause();
+      bigmapVideoRef.current.currentTime = 0;
+
+      yttreOvalVideoRef.current.pause();
+      yttreOvalVideoRef.current.currentTime = 0;
+
       setPlaying(false);
       console.log("Stop intro");
     }
@@ -52,7 +75,9 @@ const ThreeScene: React.FC = () => {
         // Import glb model from /public/models/lhf_2025_arena_01.glb
         const loader = new GLTFLoader();
         let arena;
-        loader.load("/models/lhf_2025_arena_04.glb", (gltf) => {
+
+        if (!process.env.NEXT_PUBLIC_ARENA_MODEL) return;
+        loader.load(process.env.NEXT_PUBLIC_ARENA_MODEL, (gltf) => {
           arena = scene.add(gltf.scene);
 
           // Add materials to the model
@@ -62,14 +87,18 @@ const ThreeScene: React.FC = () => {
                 color: 0xffffff,
               });
             }
+
+            // console.log(child.name);
           });
 
-          // Print all names of the objects in the model
+          // Get all the children of the gltf.scene
           gltf.scene.traverse((child) => {
             if (child.name === "ICE") {
               // Create a video texture
-              if (videoRef.current) {
-                const videoTexture = new THREE.VideoTexture(videoRef.current);
+              if (iceVideoRef.current) {
+                const videoTexture = new THREE.VideoTexture(
+                  iceVideoRef.current
+                );
                 videoTexture.minFilter = THREE.LinearFilter;
                 videoTexture.magFilter = THREE.LinearFilter;
                 videoTexture.format = THREE.RGBFormat;
@@ -80,6 +109,46 @@ const ThreeScene: React.FC = () => {
                 });
 
                 // Apply the video material to the object
+                (child as THREE.Mesh).material = videoMaterial;
+              }
+            }
+
+            if (
+              child.name === "K1" ||
+              child.name === "A8" ||
+              child.name === "A6" ||
+              child.name === "A9" ||
+              child.name === "A0"
+            ) {
+              if (bigmapVideoRef.current) {
+                const videoTexture = new THREE.VideoTexture(
+                  bigmapVideoRef.current
+                );
+                videoTexture.minFilter = THREE.LinearFilter;
+                videoTexture.magFilter = THREE.LinearFilter;
+                videoTexture.format = THREE.RGBFormat;
+
+                const videoMaterial = new THREE.MeshBasicMaterial({
+                  map: videoTexture,
+                });
+
+                (child as THREE.Mesh).material = videoMaterial;
+              }
+            }
+
+            if (child.name === "Oval_outside") {
+              if (yttreOvalVideoRef.current) {
+                const videoTexture = new THREE.VideoTexture(
+                  yttreOvalVideoRef.current
+                );
+                videoTexture.minFilter = THREE.LinearFilter;
+                videoTexture.magFilter = THREE.LinearFilter;
+                videoTexture.format = THREE.RGBFormat;
+
+                const videoMaterial = new THREE.MeshBasicMaterial({
+                  map: videoTexture,
+                });
+
                 (child as THREE.Mesh).material = videoMaterial;
               }
             }
@@ -162,17 +231,36 @@ const ThreeScene: React.FC = () => {
         playVideo={playVideo}
         stopVideo={stopVideo}
       />
-
       <div ref={containerRef} />
 
       <video
-        ref={videoRef}
+        ref={iceVideoRef}
         style={{ display: "none" }}
         loop={false}
         muted={false}
         playsInline={true}
         crossOrigin="anonymous"
-        src="https://firebasestorage.googleapis.com/v0/b/coop-arena-web.appspot.com/o/videos%2Fice_2000x1000_25fps_02_wMusic_c.mp4?alt=media&token=0e2b2c8e-1548-49d3-a084-4c92a2ec890e"
+        src={process.env.NEXT_PUBLIC_ICE_URL}
+      ></video>
+
+      <video
+        ref={bigmapVideoRef}
+        style={{ display: "none" }}
+        loop={false}
+        muted={true}
+        playsInline={true}
+        crossOrigin="anonymous"
+        src={process.env.NEXT_PUBLIC_BIGMAP_URL}
+      ></video>
+
+      <video
+        ref={yttreOvalVideoRef}
+        style={{ display: "none" }}
+        loop={false}
+        muted={true}
+        playsInline={true}
+        crossOrigin="anonymous"
+        src={process.env.NEXT_PUBLIC_YTTRE_OVAL_URL}
       ></video>
     </>
   );
