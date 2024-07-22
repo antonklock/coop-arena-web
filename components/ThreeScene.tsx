@@ -16,7 +16,7 @@ import applyVideoMaterials from "@/utils/three/applyMaterials";
 
 dotenv.config();
 
-let angle = 100;
+let angle = 2.6;
 const radius = 30;
 const speed = 0.0005;
 
