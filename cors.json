@@ -1,6 +1,6 @@
 [
   {
-    "origin": ["https://coop-arena-web.vercel.app"],
+    "origin": ["https://coop-arena-web.vercel.app", "https://coop-arena-web-git-addingscenebuildup-antonklocks-projects.vercel.app/"],
     "method": ["GET", "HEAD", "OPTIONS"],
     "maxAgeSeconds": 3600
   }

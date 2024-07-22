@@ -30,7 +30,8 @@ const ThreeScene: React.FC = () => {
     new THREE.Vector3()
   );
   const [arena, setArena] = useState<GLTF>();
-  const [animOrbit, setAnimOrbit] = useState(true);
+  const [introAnimDone, setIntroAnimDone] = useState(false);
+  const animOrbit = useRef(true);
 
   useEffect(() => {
     let controls: OrbitControls;
@@ -47,9 +48,9 @@ const ThreeScene: React.FC = () => {
 
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      3, // strength
-      0.5, // radius
-      0.01 // threshold
+      3,
+      0.5,
+      0.01
     );
     composer.addPass(bloomPass);
 
@@ -57,9 +58,7 @@ const ThreeScene: React.FC = () => {
     ///////////////////////////////////
     ///////////////////////////////////
 
-    renderer.localClippingEnabled = true;
-
-    let yClip = -2;
+    let yClip = -3;
     const clippingPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), yClip);
 
     ///////////////////////////////////
@@ -91,7 +90,7 @@ const ThreeScene: React.FC = () => {
     // applyWireframeMaterial();
 
     const renderScene = () => {
-      if (animOrbit) {
+      if (animOrbit.current) {
         // Update the camera's angle
         angle += speed;
 
@@ -100,18 +99,60 @@ const ThreeScene: React.FC = () => {
         camera.position.z = radius * Math.sin(angle);
 
         // Make the camera look at the center of the scene
-        camera.lookAt(0, 0, 0);
+        camera.lookAt(0, 3, 0);
       }
 
-      if (yClip > 70 && yClip < 100) {
+      if (yClip > 30 && yClip < 100) {
         yClip = 101;
-        arena.scene.traverse((child) => {
-          const mat = new THREE.MeshStandardMaterial({ color: 0xdd4444 });
-          (child as THREE.Mesh).material = mat;
+
+        let blinkCount = 0;
+        const stdMat = new THREE.MeshStandardMaterial({ color: 0xdd4444 });
+        const wireMat = new THREE.MeshStandardMaterial({
+          color: 0xdd4444,
+          wireframe: true,
         });
-        bloomPass.strength = 0.25;
+
+        const interval = setInterval(() => {
+          if (blinkCount === 0) {
+            bloomPass.strength = 2;
+            blinkCount++;
+            arena.scene.traverse((child) => {
+              (child as THREE.Mesh).material = stdMat;
+            });
+          }
+          if (blinkCount < 3) {
+            if (blinkCount % 2 === 1) {
+              arena.scene.traverse((child) => {
+                (child as THREE.Mesh).material = wireMat;
+              });
+              blinkCount++;
+            } else {
+              arena.scene.traverse((child) => {
+                (child as THREE.Mesh).material = stdMat;
+              });
+              blinkCount++;
+            }
+          } else {
+            bloomPass.strength = 0;
+            arena.scene.traverse((child) => {
+              (child as THREE.Mesh).material = stdMat;
+              if (arena)
+                applyVideoMaterials({
+                  gltf: arena,
+                  iceVideoRef,
+                  bigmapVideoRef,
+                });
+
+              iceVideoRef.current?.play();
+              setPlaying(true);
+              setIntroAnimDone(true);
+            });
+            clearInterval(interval);
+          }
+        }, 100);
       } else {
-        yClip += 0.05;
+        // yClip += 0.05;
+        yClip += 0.15;
         clippingPlane.constant = yClip;
       }
 
@@ -148,20 +189,17 @@ const ThreeScene: React.FC = () => {
       controls.dispose();
       renderer.dispose();
     };
-  }, [animOrbit]);
+  }, []);
 
   const handleApplyVideoMaterials = () => {
     if (arena)
       applyVideoMaterials({ gltf: arena, iceVideoRef, bigmapVideoRef });
   };
 
-  useEffect(() => {
-    console.log(animOrbit);
-  }, [animOrbit]);
-
   return (
     <>
       <PlayIntroButton
+        introAnimDone={introAnimDone}
         playing={playing}
         playVideo={() =>
           playVideo({
@@ -180,6 +218,7 @@ const ThreeScene: React.FC = () => {
           })
         }
       />
+
       <button
         style={{
           backgroundColor: "blue",
@@ -189,12 +228,14 @@ const ThreeScene: React.FC = () => {
           paddingTop: 2,
           paddingBottom: 2,
           borderRadius: 4,
+          marginTop: 4,
+          marginBottom: 32,
         }}
-        onClick={() => setAnimOrbit(!animOrbit)}
+        onClick={() => (animOrbit.current = !animOrbit.current)}
       >
-        {animOrbit ? "No orbit animation" : "Orbit animation"}
+        {animOrbit.current ? "Release camera" : "Orbit animation"}
       </button>
-      <button
+      {/* <button
         style={{
           backgroundColor: "yellow",
           color: "black",
@@ -207,13 +248,13 @@ const ThreeScene: React.FC = () => {
         onClick={handleApplyVideoMaterials}
       >
         Apply video materials
-      </button>
-      <p>
+      </button> */}
+      {/* <p>
         Camera position:
         {`x: ${cameraPosition.x.toFixed(1)} y: ${cameraPosition.y.toFixed(
           1
         )} z: ${cameraPosition.z.toFixed(1)}`}
-      </p>
+      </p> */}
       <div ref={containerRef} />
 
       <video
