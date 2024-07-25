@@ -13,6 +13,7 @@ import stopVideo from "../utils/video/stopVideo";
 import threeSetup from "../utils/three/threeSetup";
 import { initLights } from "../utils/three/initFunctions/addLights";
 import applyVideoMaterials from "@/utils/three/applyMaterials";
+import { SettingsMenu } from "./SettingsMenu";
 
 dotenv.config();
 
@@ -26,15 +27,27 @@ const ThreeScene: React.FC = () => {
   const bigmapVideoRef = useRef<HTMLVideoElement>(null);
   const yttreOvalVideoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
-  const [cameraPosition, setCameraPosition] = useState<THREE.Vector3>(
-    new THREE.Vector3()
-  );
   const [arena, setArena] = useState<GLTF>();
   const [introAnimDone, setIntroAnimDone] = useState(false);
   const animOrbit = useRef(true);
+  const [iceUrl, setIceUrl] = useState("");
+  const [upperCubeUrl, setUpperCubeUrl] = useState("");
+  const [a7Url, setA7Url] = useState("");
+
+  // Show settings menu
+  const [showMenu, setShowMenu] = useState(false);
+
+  const setVideoUrls = (ice: string, upperCube: string, a7: string) => {
+    setIceUrl(ice);
+    setUpperCubeUrl(upperCube);
+    setA7Url(a7);
+  };
 
   useEffect(() => {
     let controls: OrbitControls;
+
+    if (process.env.NEXT_PUBLIC_ICE_URL)
+      setIceUrl(process.env.NEXT_PUBLIC_ICE_URL);
 
     const { scene, camera, renderer, loader } = threeSetup(containerRef);
 
@@ -58,13 +71,12 @@ const ThreeScene: React.FC = () => {
     ///////////////////////////////////
     ///////////////////////////////////
 
-    let yClip = -3;
+    let yClip = -0.25;
     const clippingPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), yClip);
 
     ///////////////////////////////////
     ///////////////////////////////////
 
-    setCameraPosition(camera.position);
     initLights().forEach((light) => scene.add(light));
 
     let arena: GLTF;
@@ -87,9 +99,26 @@ const ThreeScene: React.FC = () => {
       console.error("Failed to load arena model");
     }
 
-    // applyWireframeMaterial();
+    const fog = (scene.fog = new THREE.FogExp2(0x000000, 0.1));
 
-    const renderScene = () => {
+    let fadeTime = 0;
+    const fadeDuration = 100;
+
+    const animate = (timestamp: number): void => {
+      const time = timestamp * 0.001;
+      const deltaTime = time - lastTime;
+
+      // Update fade
+      if (fadeTime < fadeDuration) {
+        fadeTime += deltaTime;
+        const t = fadeTime / fadeDuration;
+        const easedT = easeInOutCubic(t);
+
+        // Start with high density (black) and decrease to 0 (clear)
+        const fogDensity = 0.1 * (1 - easedT);
+        fog.density = fogDensity;
+      }
+
       if (animOrbit.current) {
         // Update the camera's angle
         angle += speed;
@@ -105,69 +134,59 @@ const ThreeScene: React.FC = () => {
       if (yClip > 30 && yClip < 100) {
         yClip = 101;
 
-        let blinkCount = 0;
         const stdMat = new THREE.MeshStandardMaterial({ color: 0xdd4444 });
-        const wireMat = new THREE.MeshStandardMaterial({
-          color: 0xdd4444,
-          wireframe: true,
+
+        bloomPass.strength = 0;
+        arena.scene.traverse((child) => {
+          (child as THREE.Mesh).material = stdMat;
+          if (arena)
+            applyVideoMaterials({
+              gltf: arena,
+              iceVideoRef,
+              bigmapVideoRef,
+            });
+
+          iceVideoRef.current?.play();
+          setPlaying(true);
+          setIntroAnimDone(true);
         });
-
-        const interval = setInterval(() => {
-          if (blinkCount === 0) {
-            bloomPass.strength = 2;
-            blinkCount++;
-            arena.scene.traverse((child) => {
-              (child as THREE.Mesh).material = stdMat;
-            });
-          }
-          if (blinkCount < 3) {
-            if (blinkCount % 2 === 1) {
-              arena.scene.traverse((child) => {
-                (child as THREE.Mesh).material = wireMat;
-              });
-              blinkCount++;
-            } else {
-              arena.scene.traverse((child) => {
-                (child as THREE.Mesh).material = stdMat;
-              });
-              blinkCount++;
-            }
-          } else {
-            bloomPass.strength = 0;
-            arena.scene.traverse((child) => {
-              (child as THREE.Mesh).material = stdMat;
-              if (arena)
-                applyVideoMaterials({
-                  gltf: arena,
-                  iceVideoRef,
-                  bigmapVideoRef,
-                });
-
-              iceVideoRef.current?.play();
-              setPlaying(true);
-              setIntroAnimDone(true);
-            });
-            clearInterval(interval);
-          }
-        }, 100);
       } else {
-        // yClip += 0.05;
-        yClip += 0.15;
+        yClip += 0.01 * deltaTime;
         clippingPlane.constant = yClip;
       }
 
+      if (yClip < 100) updateCamera(deltaTime);
+
       composer.render();
-      requestAnimationFrame(renderScene);
+      requestAnimationFrame(animate);
     };
 
-    renderScene();
+    let lastTime = 0;
+    requestAnimationFrame(animate);
+
+    const animTarget = 10;
+    const startY = camera.position.y;
+    const duration = 3000;
+    let animationTime = 0;
+
+    function updateCamera(deltaTime: number) {
+      if (yClip > 5 && camera.position.y > animTarget) {
+        animationTime += deltaTime;
+        const t = Math.min(animationTime / duration, 1);
+        const smoothT = easeInOutCubic(t);
+
+        const { x, z } = camera.position;
+        const newY = startY + (animTarget - startY) * smoothT;
+        camera.position.set(x, newY, z);
+      }
+    }
+
+    function easeInOutCubic(t: number): number {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
 
     // Add orbit controls
     controls = new OrbitControls(camera, renderer.domElement);
-    const handleControlsChange = () => {
-      setCameraPosition(camera.position.clone());
-    };
-    controls.addEventListener("change", handleControlsChange);
     controls.update();
 
     const handleResize = () => {
@@ -184,7 +203,6 @@ const ThreeScene: React.FC = () => {
 
     return () => {
       window.removeEventListener("resize", handleResize);
-      controls.removeEventListener("change", handleControlsChange);
       containerRef.current?.removeChild(renderer.domElement);
       controls.dispose();
       renderer.dispose();
@@ -198,63 +216,69 @@ const ThreeScene: React.FC = () => {
 
   return (
     <>
-      <PlayIntroButton
-        introAnimDone={introAnimDone}
-        playing={playing}
-        playVideo={() =>
-          playVideo({
-            iceVideoRef,
-            bigmapVideoRef,
-            yttreOvalVideoRef,
-            setPlaying,
-          })
-        }
-        stopVideo={() =>
-          stopVideo({
-            iceVideoRef,
-            bigmapVideoRef,
-            yttreOvalVideoRef,
-            setPlaying,
-          })
-        }
+      <div className="absolute top-[10px] right-[20px] flex flex-col-reverse justify-start">
+        <PlayIntroButton
+          introAnimDone={introAnimDone}
+          playing={playing}
+          playVideo={() =>
+            playVideo({
+              iceVideoRef,
+              bigmapVideoRef,
+              yttreOvalVideoRef,
+              setPlaying,
+            })
+          }
+          stopVideo={() =>
+            stopVideo({
+              iceVideoRef,
+              bigmapVideoRef,
+              yttreOvalVideoRef,
+              setPlaying,
+            })
+          }
+        />
+
+        <button
+          style={{
+            backgroundColor: "blue",
+            color: "white",
+            paddingRight: 4,
+            paddingLeft: 4,
+            paddingTop: 2,
+            paddingBottom: 2,
+            borderRadius: 4,
+            marginTop: 4,
+          }}
+          onClick={() => (animOrbit.current = !animOrbit.current)}
+        >
+          {animOrbit.current ? "Release camera" : "Orbit animation"}
+        </button>
+        <button
+          style={{
+            backgroundColor: "blue",
+            color: "white",
+            paddingRight: 4,
+            paddingLeft: 4,
+            paddingTop: 2,
+            paddingBottom: 2,
+            borderRadius: 4,
+            marginTop: 4,
+          }}
+          onClick={() => setShowMenu(!showMenu)}
+        >
+          Settings
+        </button>
+      </div>
+
+      <SettingsMenu
+        setShowMenu={setShowMenu}
+        showMenu={showMenu}
+        setUrls={setVideoUrls}
+        currentA7Url={a7Url}
+        currentIceUrl={iceUrl}
+        currentUpperCubeUrl={upperCubeUrl}
       />
 
-      <button
-        style={{
-          backgroundColor: "blue",
-          color: "white",
-          paddingRight: 4,
-          paddingLeft: 4,
-          paddingTop: 2,
-          paddingBottom: 2,
-          borderRadius: 4,
-          marginTop: 4,
-          marginBottom: 32,
-        }}
-        onClick={() => (animOrbit.current = !animOrbit.current)}
-      >
-        {animOrbit.current ? "Release camera" : "Orbit animation"}
-      </button>
-      {/* <button
-        style={{
-          backgroundColor: "yellow",
-          color: "black",
-          paddingRight: 4,
-          paddingLeft: 4,
-          paddingTop: 2,
-          paddingBottom: 2,
-          borderRadius: 4,
-        }}
-        onClick={handleApplyVideoMaterials}
-      >
-        Apply video materials
-      </button> */}
-      {/* <p>
-        Camera position:
-        {`x: ${cameraPosition.x.toFixed(1)} y: ${cameraPosition.y.toFixed(
-          1
-        )} z: ${cameraPosition.z.toFixed(1)}`}
-      </p> */}
       <div ref={containerRef} />
 
       <video
@@ -264,7 +288,7 @@ const ThreeScene: React.FC = () => {
         muted={false}
         playsInline={true}
         crossOrigin="anonymous"
-        src={process.env.NEXT_PUBLIC_ICE_URL}
+        src={iceUrl}
       ></video>
 
       <video

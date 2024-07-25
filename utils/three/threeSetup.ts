@@ -9,7 +9,7 @@ const threeSetup = (containerRef: React.RefObject<HTMLDivElement>) => {
         0.1,
         1000
     );
-    camera.position.set(-110, 6, 0);
+    camera.position.set(-150, 50, 0);
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth / 1.25, window.innerHeight / 1.25);
     containerRef.current?.appendChild(renderer.domElement);

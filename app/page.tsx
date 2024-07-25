@@ -9,8 +9,11 @@ export default function Home() {
     <>
       {started ? (
         <div className="flex min-h-screen flex-col items-center justify-between p-12">
-          <h1 className="text-4xl font-bold">LHF Intro 24/25</h1>
-          <p>Drag camera to orbit and move</p>
+          <div className="flex flex-col items-center">
+            <h1 className="text-4xl font-bold p-0 m-0">LHF Intro 24/25</h1>
+            <p className="p-0 m-0">Drag camera to orbit and move</p>
+          </div>
+
           <ThreeScene />
         </div>
       ) : (
