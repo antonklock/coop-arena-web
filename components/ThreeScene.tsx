@@ -157,6 +157,12 @@ const ThreeScene: React.FC = () => {
 
       if (yClip < 100) updateCamera(deltaTime);
 
+      if (yClip >= 100 && !controls) {
+        // Add orbit controls
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.update();
+      }
+
       composer.render();
       requestAnimationFrame(animate);
     };
@@ -185,10 +191,6 @@ const ThreeScene: React.FC = () => {
       return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
     }
 
-    // Add orbit controls
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.update();
-
     const handleResize = () => {
       const width = window.innerWidth;
       const height = window.innerHeight;
@@ -204,7 +206,7 @@ const ThreeScene: React.FC = () => {
     return () => {
       window.removeEventListener("resize", handleResize);
       containerRef.current?.removeChild(renderer.domElement);
-      controls.dispose();
+      if (controls) controls.dispose();
       renderer.dispose();
     };
   }, []);
