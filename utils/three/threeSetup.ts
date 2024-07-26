@@ -11,7 +11,7 @@ const threeSetup = (containerRef: React.RefObject<HTMLDivElement>) => {
     );
     camera.position.set(-150, 50, 0);
     const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth / 1.25, window.innerHeight / 1.25);
+    renderer.setSize(window.innerWidth, window.innerHeight);
     containerRef.current?.appendChild(renderer.domElement);
     const loader = new GLTFLoader();
     renderer.shadowMap.enabled = true;

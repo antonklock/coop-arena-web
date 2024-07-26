@@ -17,11 +17,17 @@ import { SettingsMenu } from "./SettingsMenu";
 
 dotenv.config();
 
+type ThreeSceneProps = {
+  handleUnloadArena: () => void;
+};
+
 let angle = 2.6;
 const radius = 30;
-const speed = 0.0005;
+const speed = 5;
 
-const ThreeScene: React.FC = () => {
+const ThreeScene = (props: ThreeSceneProps) => {
+  const { handleUnloadArena } = props;
+
   const containerRef = useRef<HTMLDivElement>(null);
   const iceVideoRef = useRef<HTMLVideoElement>(null);
   const bigmapVideoRef = useRef<HTMLVideoElement>(null);
@@ -33,14 +39,20 @@ const ThreeScene: React.FC = () => {
   const [iceUrl, setIceUrl] = useState("");
   const [upperCubeUrl, setUpperCubeUrl] = useState("");
   const [a7Url, setA7Url] = useState("");
+  const [showMenu, setShowMenu] = useState(false);
 
   // Show settings menu
-  const [showMenu, setShowMenu] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const setVideoUrls = (ice: string, upperCube: string, a7: string) => {
     setIceUrl(ice);
     setUpperCubeUrl(upperCube);
     setA7Url(a7);
+  };
+
+  const handleUnload = () => {
+    window.location.reload();
+    handleUnloadArena();
   };
 
   useEffect(() => {
@@ -121,7 +133,7 @@ const ThreeScene: React.FC = () => {
 
       if (animOrbit.current) {
         // Update the camera's angle
-        angle += speed;
+        angle += (speed * deltaTime) / 100000;
 
         // Calculate the new camera position
         camera.position.x = radius * Math.cos(angle);
@@ -204,6 +216,7 @@ const ThreeScene: React.FC = () => {
     window.addEventListener("resize", handleResize);
 
     return () => {
+      scene.clear();
       window.removeEventListener("resize", handleResize);
       containerRef.current?.removeChild(renderer.domElement);
       if (controls) controls.dispose();
@@ -218,63 +231,97 @@ const ThreeScene: React.FC = () => {
 
   return (
     <>
-      <div className="absolute top-[10px] right-[20px] flex flex-col-reverse justify-start">
-        <PlayIntroButton
-          introAnimDone={introAnimDone}
-          playing={playing}
-          playVideo={() =>
-            playVideo({
-              iceVideoRef,
-              bigmapVideoRef,
-              yttreOvalVideoRef,
-              setPlaying,
-            })
-          }
-          stopVideo={() =>
-            stopVideo({
-              iceVideoRef,
-              bigmapVideoRef,
-              yttreOvalVideoRef,
-              setPlaying,
-            })
-          }
-        />
-
-        <button
-          style={{
-            backgroundColor: "blue",
-            color: "white",
-            paddingRight: 4,
-            paddingLeft: 4,
-            paddingTop: 2,
-            paddingBottom: 2,
-            borderRadius: 4,
-            marginTop: 4,
-          }}
-          onClick={() => (animOrbit.current = !animOrbit.current)}
-        >
-          {animOrbit.current ? "Release camera" : "Orbit animation"}
-        </button>
-        <button
-          style={{
-            backgroundColor: "blue",
-            color: "white",
-            paddingRight: 4,
-            paddingLeft: 4,
-            paddingTop: 2,
-            paddingBottom: 2,
-            borderRadius: 4,
-            marginTop: 4,
-          }}
+      <div
+        style={showMenu ? { backgroundColor: "#121212", borderRadius: 10 } : {}}
+        className="absolute top-[2%] right-[2%] flex flex-col justify-end items-end gap-3"
+      >
+        <div
           onClick={() => setShowMenu(!showMenu)}
+          className="flex flex-col gap-1 justify-center items-center w-10 h-10 m-4 rounded-full bg-red-600 border-2 border-red-200 opacity-75 hover:opacity-100 drop-shadow-xl"
         >
-          Settings
-        </button>
+          <div className="w-5 h-[3px] bg-red-200 rounded-full"></div>
+          <div className="w-5 h-[3px] bg-red-200 rounded-full"></div>
+          <div className="w-5 h-[3px] bg-red-200 rounded-full"></div>
+        </div>
+        {showMenu ? (
+          <>
+            <div className="flex flex-col justify-start m-4">
+              <PlayIntroButton
+                introAnimDone={introAnimDone}
+                playing={playing}
+                playVideo={() =>
+                  playVideo({
+                    iceVideoRef,
+                    bigmapVideoRef,
+                    yttreOvalVideoRef,
+                    setPlaying,
+                  })
+                }
+                stopVideo={() =>
+                  stopVideo({
+                    iceVideoRef,
+                    bigmapVideoRef,
+                    yttreOvalVideoRef,
+                    setPlaying,
+                  })
+                }
+              />
+
+              <button
+                style={{
+                  backgroundColor: "blue",
+                  color: "white",
+                  paddingRight: 4,
+                  paddingLeft: 4,
+                  paddingTop: 2,
+                  paddingBottom: 2,
+                  borderRadius: 4,
+                  marginTop: 4,
+                }}
+                onClick={() => (animOrbit.current = !animOrbit.current)}
+              >
+                {animOrbit.current ? "Release camera" : "Orbit animation"}
+              </button>
+              <button
+                style={{
+                  backgroundColor: "blue",
+                  color: "white",
+                  paddingRight: 4,
+                  paddingLeft: 4,
+                  paddingTop: 2,
+                  paddingBottom: 2,
+                  borderRadius: 4,
+                  marginTop: 4,
+                }}
+                onClick={() => setShowSettings(!showSettings)}
+              >
+                Settings
+              </button>
+              <button
+                style={{
+                  backgroundColor: "blue",
+                  color: "white",
+                  paddingRight: 4,
+                  paddingLeft: 4,
+                  paddingTop: 2,
+                  paddingBottom: 2,
+                  borderRadius: 4,
+                  marginTop: 4,
+                }}
+                onClick={handleUnload}
+              >
+                Unload arena
+              </button>
+            </div>
+          </>
+        ) : (
+          <></>
+        )}
       </div>
 
       <SettingsMenu
-        setShowMenu={setShowMenu}
-        showMenu={showMenu}
+        setShowMenu={setShowSettings}
+        showMenu={showSettings}
         setUrls={setVideoUrls}
         currentA7Url={a7Url}
         currentIceUrl={iceUrl}
