@@ -124,13 +124,17 @@ const ThreeScene = (props: ThreeSceneProps) => {
       // Update fade
       if (fadeTime < fadeDuration) {
         fadeTime += deltaTime * 40;
+        console.log("deltaTime: ", deltaTime);
         const t = fadeTime / fadeDuration;
         const easedT = easeInOutCubic(t);
 
         // Start with high density (black) and decrease to 0 (clear)
-        const fogDensity = 0.1 * (1 - easedT);
-        console.log("fogDensity: ", fogDensity);
+        // const fogDensity = 0.1 * (1 - easedT);
+        const fogDensity = 0.1 - fadeTime / fadeDuration;
         fog.density = fogDensity;
+      } else if (fog.density !== 0.00001) {
+        fog.density = 0.01;
+        console.log("Fog density: ", fog.density);
       }
 
       if (animOrbit.current) {
