@@ -23,7 +23,7 @@ type ThreeSceneProps = {
 
 let angle = 2.6;
 const radius = 30;
-const speed = 5;
+const speed = 0.011;
 
 const ThreeScene = (props: ThreeSceneProps) => {
   const { handleUnloadArena } = props;
@@ -83,7 +83,7 @@ const ThreeScene = (props: ThreeSceneProps) => {
     ///////////////////////////////////
     ///////////////////////////////////
 
-    let yClip = -0.25;
+    let yClip = -5;
     const clippingPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), yClip);
 
     ///////////////////////////////////
@@ -119,21 +119,30 @@ const ThreeScene = (props: ThreeSceneProps) => {
     const animate = (timestamp: number): void => {
       const time = timestamp * 0.001;
       const deltaTime = time - lastTime;
+      lastTime = time;
 
       // Update fade
       if (fadeTime < fadeDuration) {
-        fadeTime += deltaTime;
+        fadeTime += deltaTime * 40;
         const t = fadeTime / fadeDuration;
         const easedT = easeInOutCubic(t);
 
         // Start with high density (black) and decrease to 0 (clear)
         const fogDensity = 0.1 * (1 - easedT);
+        console.log("fogDensity: ", fogDensity);
         fog.density = fogDensity;
       }
 
       if (animOrbit.current) {
         // Update the camera's angle
-        angle += (speed * deltaTime) / 100000;
+        angle += speed * deltaTime;
+
+        // Reset the angle when it reaches 2*PI
+        if (angle > 2 * Math.PI) {
+          angle = 0;
+          console.log("Resetting angle");
+          console.log("speed: ", speed);
+        }
 
         // Calculate the new camera position
         camera.position.x = radius * Math.cos(angle);
@@ -146,7 +155,7 @@ const ThreeScene = (props: ThreeSceneProps) => {
       if (yClip > 30 && yClip < 100) {
         yClip = 101;
 
-        const stdMat = new THREE.MeshStandardMaterial({ color: 0xdd4444 });
+        const stdMat = new THREE.MeshLambertMaterial({ color: 0xdd4444 });
 
         bloomPass.strength = 0;
         arena.scene.traverse((child) => {
@@ -163,7 +172,7 @@ const ThreeScene = (props: ThreeSceneProps) => {
           setIntroAnimDone(true);
         });
       } else {
-        yClip += 0.01 * deltaTime;
+        yClip += 0.01 * deltaTime * 300;
         clippingPlane.constant = yClip;
       }
 
@@ -184,12 +193,12 @@ const ThreeScene = (props: ThreeSceneProps) => {
 
     const animTarget = 10;
     const startY = camera.position.y;
-    const duration = 3000;
+    const duration = 6000;
     let animationTime = 0;
 
     function updateCamera(deltaTime: number) {
-      if (yClip > 5 && camera.position.y > animTarget) {
-        animationTime += deltaTime;
+      if (yClip > 15 && camera.position.y > animTarget) {
+        animationTime += deltaTime * 1000;
         const t = Math.min(animationTime / duration, 1);
         const smoothT = easeInOutCubic(t);
 
