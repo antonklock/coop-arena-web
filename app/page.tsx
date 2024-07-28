@@ -2,7 +2,7 @@
 
 import { Menu } from "@/components/Menu/Menu";
 import { StartPage } from "@/components/StartPage/StartPage";
-import { ThreeScene } from "@/components/ThreeScene";
+import { ThreeScene } from "@/components/ThreeJS/ThreeScene";
 import { VideoElements } from "@/components/Videos/VideoElements";
 import { useState, useRef, useEffect } from "react";
 

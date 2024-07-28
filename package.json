@@ -13,7 +13,8 @@
     "next": "14.2.4",
     "react": "^18",
     "react-dom": "^18",
-    "three": "^0.165.0"
+    "three": "^0.165.0",
+    "zustand": "^4.5.4"
   },
   "devDependencies": {
     "@types/howler": "^2.2.11",

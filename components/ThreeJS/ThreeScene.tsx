@@ -1,15 +1,14 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, use } from "react";
 import * as THREE from "three";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
-import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
-import { GLTF, OrbitControls } from "three/examples/jsm/Addons.js";
+import { OrbitControls } from "three/examples/jsm/Addons.js";
 import dotenv from "dotenv";
-import threeSetup from "../utils/three/threeSetup";
-import { initLights } from "../utils/three/initFunctions/addLights";
 import applyVideoMaterials from "@/utils/three/applyMaterials";
+import { initPostProcessing } from "../../utils/three/PostProcessing";
+import { useThreeSceneStore } from "@/stores/ThreeSceneStore";
+import { useIntroAnimStore } from "@/stores/IntroAnimStore";
+import { loadAndAddArenaModel } from "@/utils/three/Load Functions/LoadAndAddArenaModel";
 
 dotenv.config();
 
@@ -28,7 +27,6 @@ export const ThreeScene = (props: ThreeSceneProps) => {
   const { handleUnloadArena, videos, setPlaying, setIntroAnimDone } = props;
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const [arena, setArena] = useState<GLTF>();
   const animOrbit = useRef(true);
 
   const handleUnload = () => {
@@ -36,58 +34,27 @@ export const ThreeScene = (props: ThreeSceneProps) => {
     handleUnloadArena();
   };
 
+  const { scene, camera, renderer, arena } = useThreeSceneStore();
+  const { clippingPlane, yClip } = useIntroAnimStore();
+
   useEffect(() => {
-    let controls: OrbitControls;
+    if (!arena) return;
+    if (scene.children.includes(arena.scene)) return;
+    console.log("Adding arena model to scene");
+    scene.add(arena.scene);
+  }, [arena, scene]);
 
-    const { scene, camera, renderer, loader } = threeSetup(containerRef);
+  useEffect(() => {
+    // Convert to store
+    const postProcessing = initPostProcessing({ renderer, scene, camera });
 
-    // COMPOSER / BLOOM PASS
-    ///////////////////////////////////
-    ///////////////////////////////////
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enabled = true;
+    controls.update();
 
-    const composer = new EffectComposer(renderer);
-    const renderPass = new RenderPass(scene, camera);
-    composer.addPass(renderPass);
+    containerRef.current?.appendChild(renderer.domElement);
 
-    const bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(window.innerWidth, window.innerHeight),
-      3,
-      0.5,
-      0.01
-    );
-    composer.addPass(bloomPass);
-
-    // CLIPPING PLANE
-    ///////////////////////////////////
-    ///////////////////////////////////
-
-    let yClip = -5;
-    const clippingPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), yClip);
-
-    ///////////////////////////////////
-    ///////////////////////////////////
-
-    initLights().forEach((light) => scene.add(light));
-
-    let arena: GLTF;
-
-    if (process.env.NEXT_PUBLIC_ARENA_MODEL) {
-      loader.load(process.env.NEXT_PUBLIC_ARENA_MODEL, (gltf) => {
-        gltf.scene.traverse((child) => {
-          const material = new THREE.MeshBasicMaterial({
-            color: 0x660000,
-            wireframe: true,
-            clippingPlanes: [clippingPlane],
-          });
-          (child as THREE.Mesh).material = material;
-        });
-        arena = gltf;
-        scene.add(arena.scene);
-        setArena(arena);
-      });
-    } else {
-      console.error("Failed to load arena model");
-    }
+    loadAndAddArenaModel();
 
     const fog = (scene.fog = new THREE.FogExp2(0x000000, 0.1));
 
@@ -102,7 +69,6 @@ export const ThreeScene = (props: ThreeSceneProps) => {
       // Update fade
       if (fadeTime < fadeDuration) {
         fadeTime += deltaTime * 40;
-        console.log("deltaTime: ", deltaTime);
         const t = fadeTime / fadeDuration;
         const easedT = easeInOutCubic(t);
 
@@ -110,9 +76,8 @@ export const ThreeScene = (props: ThreeSceneProps) => {
         // const fogDensity = 0.1 * (1 - easedT);
         const fogDensity = 0.1 - fadeTime / fadeDuration;
         fog.density = fogDensity;
-      } else if (fog.density !== 0.00001) {
+      } else if (fog.density !== 0.01) {
         fog.density = 0.01;
-        console.log("Fog density: ", fog.density);
       }
 
       if (animOrbit.current) {
@@ -134,13 +99,16 @@ export const ThreeScene = (props: ThreeSceneProps) => {
         camera.lookAt(0, 3, 0);
       }
 
+      const { yClip, clippingPlane } = useIntroAnimStore.getState();
+
       if (yClip > 30 && yClip < 100) {
-        yClip = 101;
+        // yClip = 101;
+        useIntroAnimStore.setState({ yClip: 101 });
 
         const stdMat = new THREE.MeshLambertMaterial({ color: 0xdd4444 });
 
-        bloomPass.strength = 0;
-        arena.scene.traverse((child) => {
+        postProcessing.bloomPass.strength = 0;
+        arena?.scene.traverse((child) => {
           (child as THREE.Mesh).material = stdMat;
           if (arena)
             applyVideoMaterials({
@@ -155,19 +123,20 @@ export const ThreeScene = (props: ThreeSceneProps) => {
           setIntroAnimDone(true);
         });
       } else {
-        yClip += 0.01 * deltaTime * 300;
-        clippingPlane.constant = yClip;
+        const newClip = yClip + 0.01 * deltaTime * 300;
+        clippingPlane.constant = newClip;
+        useIntroAnimStore.setState({ yClip: newClip, clippingPlane });
       }
 
       if (yClip < 100) updateCamera(deltaTime);
 
-      if (yClip >= 100 && !controls) {
+      if (yClip >= 100) {
         // Add orbit controls
-        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enabled = true;
         controls.update();
       }
 
-      composer.render();
+      postProcessing.composer.render();
       requestAnimationFrame(animate);
     };
 
@@ -216,5 +185,9 @@ export const ThreeScene = (props: ThreeSceneProps) => {
     };
   }, []);
 
-  return <div ref={containerRef} />;
+  return (
+    <>
+      <div ref={containerRef} />;
+    </>
+  );
 };

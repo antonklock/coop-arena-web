@@ -1,8 +1,15 @@
-import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/Addons.js";
+import { create } from 'zustand';
+import * as THREE from 'three';
+import { GLTF } from 'three/examples/jsm/Addons.js';
 
+interface ThreeSceneStore {
+    scene: THREE.Scene;
+    camera: THREE.PerspectiveCamera;
+    renderer: THREE.WebGLRenderer;
+    arena: GLTF | null;
+}
 
-const threeSetup = (containerRef: React.RefObject<HTMLDivElement>) => {
+export const useThreeSceneStore = create<ThreeSceneStore>()((set) => {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
         75,
@@ -13,14 +20,12 @@ const threeSetup = (containerRef: React.RefObject<HTMLDivElement>) => {
     camera.position.set(-150, 50, 0);
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
-    containerRef.current?.appendChild(renderer.domElement);
-    const loader = new GLTFLoader();
     renderer.shadowMap.enabled = true;
     renderer.setPixelRatio(window.devicePixelRatio);
 
     renderer.localClippingEnabled = true;
 
-    return { scene, camera, renderer, loader };
-};
+    const arena = null;
 
-export default threeSetup;
+    return { scene, camera, renderer, arena };
+});
