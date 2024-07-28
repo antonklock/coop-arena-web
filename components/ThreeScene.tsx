@@ -6,49 +6,30 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { GLTF, OrbitControls } from "three/examples/jsm/Addons.js";
-import PlayIntroButton from "./PlayIntroButton";
 import dotenv from "dotenv";
-import playVideo from "../utils/video/playVideo";
-import stopVideo from "../utils/video/stopVideo";
 import threeSetup from "../utils/three/threeSetup";
 import { initLights } from "../utils/three/initFunctions/addLights";
 import applyVideoMaterials from "@/utils/three/applyMaterials";
-import { SettingsMenu } from "./SettingsMenu";
 
 dotenv.config();
 
 type ThreeSceneProps = {
   handleUnloadArena: () => void;
+  setPlaying: (playing: boolean) => void;
+  setIntroAnimDone: (introAnimDone: boolean) => void;
+  videos: Videos;
 };
 
 let angle = 2.6;
 const radius = 30;
 const speed = 0.011;
 
-const ThreeScene = (props: ThreeSceneProps) => {
-  const { handleUnloadArena } = props;
+export const ThreeScene = (props: ThreeSceneProps) => {
+  const { handleUnloadArena, videos, setPlaying, setIntroAnimDone } = props;
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const iceVideoRef = useRef<HTMLVideoElement>(null);
-  const bigmapVideoRef = useRef<HTMLVideoElement>(null);
-  const yttreOvalVideoRef = useRef<HTMLVideoElement>(null);
-  const [playing, setPlaying] = useState(false);
   const [arena, setArena] = useState<GLTF>();
-  const [introAnimDone, setIntroAnimDone] = useState(false);
   const animOrbit = useRef(true);
-  const [iceUrl, setIceUrl] = useState("");
-  const [upperCubeUrl, setUpperCubeUrl] = useState("");
-  const [a7Url, setA7Url] = useState("");
-  const [showMenu, setShowMenu] = useState(false);
-
-  // Show settings menu
-  const [showSettings, setShowSettings] = useState(false);
-
-  const setVideoUrls = (ice: string, upperCube: string, a7: string) => {
-    setIceUrl(ice);
-    setUpperCubeUrl(upperCube);
-    setA7Url(a7);
-  };
 
   const handleUnload = () => {
     window.location.reload();
@@ -57,9 +38,6 @@ const ThreeScene = (props: ThreeSceneProps) => {
 
   useEffect(() => {
     let controls: OrbitControls;
-
-    if (process.env.NEXT_PUBLIC_ICE_URL)
-      setIceUrl(process.env.NEXT_PUBLIC_ICE_URL);
 
     const { scene, camera, renderer, loader } = threeSetup(containerRef);
 
@@ -167,11 +145,12 @@ const ThreeScene = (props: ThreeSceneProps) => {
           if (arena)
             applyVideoMaterials({
               gltf: arena,
-              iceVideoRef,
-              bigmapVideoRef,
+              iceVideoRef: videos.ice.ref,
+              bigmapVideoRef: videos.bigMap.ref,
             });
 
-          iceVideoRef.current?.play();
+          videos.ice.ref.current?.play();
+          // iceVideoRef.current?.play();
           setPlaying(true);
           setIntroAnimDone(true);
         });
@@ -237,143 +216,5 @@ const ThreeScene = (props: ThreeSceneProps) => {
     };
   }, []);
 
-  const handleApplyVideoMaterials = () => {
-    if (arena)
-      applyVideoMaterials({ gltf: arena, iceVideoRef, bigmapVideoRef });
-  };
-
-  return (
-    <>
-      <div
-        style={showMenu ? { backgroundColor: "#121212", borderRadius: 10 } : {}}
-        className="absolute top-[2%] right-[2%] flex flex-col justify-end items-end gap-3"
-      >
-        <div
-          onClick={() => setShowMenu(!showMenu)}
-          className="flex flex-col gap-1 justify-center items-center w-10 h-10 m-4 rounded-full bg-red-600 border-2 border-red-200 opacity-75 hover:opacity-100 drop-shadow-xl"
-        >
-          <div className="w-5 h-[3px] bg-red-200 rounded-full"></div>
-          <div className="w-5 h-[3px] bg-red-200 rounded-full"></div>
-          <div className="w-5 h-[3px] bg-red-200 rounded-full"></div>
-        </div>
-        {showMenu ? (
-          <>
-            <div className="flex flex-col justify-start m-4">
-              <PlayIntroButton
-                introAnimDone={introAnimDone}
-                playing={playing}
-                playVideo={() =>
-                  playVideo({
-                    iceVideoRef,
-                    bigmapVideoRef,
-                    yttreOvalVideoRef,
-                    setPlaying,
-                  })
-                }
-                stopVideo={() =>
-                  stopVideo({
-                    iceVideoRef,
-                    bigmapVideoRef,
-                    yttreOvalVideoRef,
-                    setPlaying,
-                  })
-                }
-              />
-
-              <button
-                style={{
-                  backgroundColor: "blue",
-                  color: "white",
-                  paddingRight: 4,
-                  paddingLeft: 4,
-                  paddingTop: 2,
-                  paddingBottom: 2,
-                  borderRadius: 4,
-                  marginTop: 4,
-                }}
-                onClick={() => (animOrbit.current = !animOrbit.current)}
-              >
-                {animOrbit.current ? "Release camera" : "Orbit animation"}
-              </button>
-              <button
-                style={{
-                  backgroundColor: "blue",
-                  color: "white",
-                  paddingRight: 4,
-                  paddingLeft: 4,
-                  paddingTop: 2,
-                  paddingBottom: 2,
-                  borderRadius: 4,
-                  marginTop: 4,
-                }}
-                onClick={() => setShowSettings(!showSettings)}
-              >
-                Settings
-              </button>
-              <button
-                style={{
-                  backgroundColor: "blue",
-                  color: "white",
-                  paddingRight: 4,
-                  paddingLeft: 4,
-                  paddingTop: 2,
-                  paddingBottom: 2,
-                  borderRadius: 4,
-                  marginTop: 4,
-                }}
-                onClick={handleUnload}
-              >
-                Unload arena
-              </button>
-            </div>
-          </>
-        ) : (
-          <></>
-        )}
-      </div>
-
-      <SettingsMenu
-        setShowMenu={setShowSettings}
-        showMenu={showSettings}
-        setUrls={setVideoUrls}
-        currentA7Url={a7Url}
-        currentIceUrl={iceUrl}
-        currentUpperCubeUrl={upperCubeUrl}
-      />
-
-      <div ref={containerRef} />
-
-      <video
-        ref={iceVideoRef}
-        style={{ display: "none" }}
-        loop={false}
-        muted={false}
-        playsInline={true}
-        crossOrigin="anonymous"
-        src={iceUrl}
-      ></video>
-
-      <video
-        ref={bigmapVideoRef}
-        style={{ display: "none" }}
-        loop={false}
-        muted={true}
-        playsInline={true}
-        crossOrigin="anonymous"
-        src={process.env.NEXT_PUBLIC_BIGMAP_URL}
-      ></video>
-
-      <video
-        ref={yttreOvalVideoRef}
-        style={{ display: "none" }}
-        loop={false}
-        muted={true}
-        playsInline={true}
-        crossOrigin="anonymous"
-        src={process.env.NEXT_PUBLIC_YTTRE_OVAL_URL}
-      ></video>
-    </>
-  );
+  return <div ref={containerRef} />;
 };
-
-export default ThreeScene;
