@@ -5,6 +5,8 @@ import { StartPage } from "@/components/StartPage/StartPage";
 import { ThreeScene } from "@/components/ThreeScene";
 import { VideoElements } from "@/components/Videos/VideoElements";
 import { useState, useRef, useEffect } from "react";
+import CoopArenaScene from "../three/CoopArenaScene";
+import { Scene } from "@/src/scene";
 
 export default function Home() {
   const [started, setStarted] = useState(false);
@@ -84,12 +86,17 @@ export default function Home() {
             animOrbit={animOrbit}
             handleUnload={handleUnloadArena}
           />
-          <ThreeScene
+          {/* <ThreeScene
             setPlaying={setPlaying}
             setIntroAnimDone={setIntroAnimDone}
             handleUnloadArena={handleUnloadArena}
             videos={videos}
-          />
+          /> */}
+
+          <div style={{ width: "100vw", height: "100vh" }}>
+            {/* <CoopArenaScene /> */}
+            <Scene />
+          </div>
 
           <VideoElements videos={videos} />
         </>
