@@ -77,7 +77,7 @@ export default function Home() {
     <>
       {started ? (
         <>
-          <Menu
+          {/* <Menu
             setVideoUrls={setVideoUrls}
             introAnimDone={introAnimDone}
             playing={playing}
@@ -85,7 +85,7 @@ export default function Home() {
             videos={videos}
             animOrbit={animOrbit}
             handleUnload={handleUnloadArena}
-          />
+          /> */}
           {/* <ThreeScene
             setPlaying={setPlaying}
             setIntroAnimDone={setIntroAnimDone}
