@@ -1,31 +1,24 @@
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
+import CoopArenaGLTF from "./models/CoopArenaGLTF";
 
-export function Scene() {
+type SceneProps = {
+  iceVideoRef: React.RefObject<HTMLVideoElement>;
+};
+
+export function Scene(props: SceneProps) {
+  const { iceVideoRef } = props;
   return (
     <Canvas color={undefined} autoFocus={false}>
+      <PerspectiveCamera makeDefault position={[-35, 14, 0]} fov={90} />
       <OrbitControls />
+      <CoopArenaGLTF iceVideoRef={iceVideoRef} />
       <pointLight
         visible={true}
-        args={[undefined, 10, 0, 4]}
+        args={[undefined, 100, 0, 1.58]}
         position={[1.2, 0.96, 0.96]}
         scale={2}
       />
-      <mesh
-        castShadow
-        receiveShadow
-        visible={true}
-        frustumCulled={false}
-        position={0}
-        rotation={[0, 0, 0]}
-      >
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial
-          color={"#8a8a8a"}
-          visible={true}
-          transparent={true}
-        />
-      </mesh>
     </Canvas>
   );
 }

@@ -3,5 +3,6 @@
   "components": ["../src/*.tsx"],
   "files": [
    "../src/*.tsx"
-  ]
+  ],
+  "publicDir": "../public"
 }

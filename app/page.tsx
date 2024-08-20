@@ -95,7 +95,7 @@ export default function Home() {
 
           <div style={{ width: "100vw", height: "100vh" }}>
             {/* <CoopArenaScene /> */}
-            <Scene />
+            <Scene iceVideoRef={iceVideoRef} />
           </div>
 
           <VideoElements videos={videos} />
