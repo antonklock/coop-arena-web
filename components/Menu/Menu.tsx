@@ -16,15 +16,7 @@ type MenuProps = {
 export const Menu = (props: MenuProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const {
-    setVideoUrls,
-    introAnimDone,
-    playing,
-    setPlaying,
-    videos,
-    animOrbit,
-    handleUnload,
-  } = props;
+  const { setVideoUrls, playing, setPlaying, videos, handleUnload } = props;
   return (
     <>
       <div className="absolute top-[2%] right-[2%]">
@@ -37,11 +29,9 @@ export const Menu = (props: MenuProps) => {
           <MenuButton showMenu={showMenu} setShowMenu={setShowMenu} />
           {showMenu && (
             <MainMenu
-              introAnimDone={introAnimDone}
               playing={playing}
               videos={videos}
               setPlaying={setPlaying}
-              animOrbit={animOrbit}
               setShowSettings={setShowSettings}
               showSettings={showSettings}
               handleUnload={handleUnload}

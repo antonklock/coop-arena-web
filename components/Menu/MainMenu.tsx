@@ -1,14 +1,13 @@
 import PlayIntroButton from "../PlayIntroButton";
 import playVideo from "../../utils/video/playVideo";
 import stopVideo from "../../utils/video/stopVideo";
-import { Dispatch, MutableRefObject, SetStateAction } from "react";
+import { Dispatch, MutableRefObject, SetStateAction, use } from "react";
+import { useThreeSceneStore } from "@/stores/ThreeSceneStore";
 
 type MainMenuProps = {
   videos: Videos;
-  introAnimDone: boolean;
   playing: boolean;
   setPlaying: Dispatch<SetStateAction<boolean>>;
-  animOrbit: MutableRefObject<boolean>;
   setShowSettings: (showSettings: boolean) => void;
   showSettings: boolean;
   handleUnload: () => void;
@@ -16,20 +15,20 @@ type MainMenuProps = {
 
 export const MainMenu = (props: MainMenuProps) => {
   const {
-    introAnimDone,
     playing,
     videos,
     setPlaying,
-    animOrbit,
     setShowSettings,
     showSettings,
     handleUnload,
   } = props;
+
+  const { animOrbit } = useThreeSceneStore();
+
   return (
     <>
       <div className="flex flex-col justify-start m-4 bg-black rounded-xl">
         <PlayIntroButton
-          introAnimDone={introAnimDone}
           playing={playing}
           playVideo={() =>
             playVideo({
@@ -60,9 +59,11 @@ export const MainMenu = (props: MainMenuProps) => {
             borderRadius: 4,
             marginTop: 4,
           }}
-          onClick={() => (animOrbit.current = !animOrbit.current)}
+          onClick={() => (useThreeSceneStore.getState().animOrbit = !animOrbit)}
         >
-          {animOrbit.current ? "Release camera" : "Orbit animation"}
+          {useThreeSceneStore.getState().animOrbit
+            ? "Release camera"
+            : "Orbit animation"}
         </button>
         <button
           style={{

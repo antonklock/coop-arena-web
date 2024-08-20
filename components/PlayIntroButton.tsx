@@ -1,15 +1,16 @@
+import { useIntroAnimStore } from "@/stores/IntroAnimStore";
+
 type PlayIntroButtonProps = {
   playing: boolean;
-  introAnimDone: boolean;
   playVideo: () => void;
   stopVideo: () => void;
 };
 
 const PlayIntroButton = (props: PlayIntroButtonProps) => {
-  const { playing, playVideo, stopVideo, introAnimDone } = props;
+  const { playing, playVideo, stopVideo } = props;
   return (
     <>
-      {!introAnimDone ? (
+      {!useIntroAnimStore.getState().introAnimDone ? (
         <button
           disabled={true}
           style={{

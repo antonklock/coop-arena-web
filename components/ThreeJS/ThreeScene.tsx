@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useState, use } from "react";
+import React, { useRef, useEffect } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import dotenv from "dotenv";
@@ -8,14 +8,13 @@ import applyVideoMaterials from "@/utils/three/applyMaterials";
 import { initPostProcessing } from "../../utils/three/PostProcessing";
 import { useThreeSceneStore } from "@/stores/ThreeSceneStore";
 import { useIntroAnimStore } from "@/stores/IntroAnimStore";
-import { loadAndAddArenaModel } from "@/utils/three/Load Functions/LoadAndAddArenaModel";
+import { loadAndAddArenaModel } from "@/utils/three/Functions/Load/LoadAndAddArenaModel";
 
 dotenv.config();
 
 type ThreeSceneProps = {
   handleUnloadArena: () => void;
   setPlaying: (playing: boolean) => void;
-  setIntroAnimDone: (introAnimDone: boolean) => void;
   videos: Videos;
 };
 
@@ -24,10 +23,9 @@ const radius = 30;
 const speed = 0.011;
 
 export const ThreeScene = (props: ThreeSceneProps) => {
-  const { handleUnloadArena, videos, setPlaying, setIntroAnimDone } = props;
+  const { handleUnloadArena, videos, setPlaying } = props;
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const animOrbit = useRef(true);
 
   const handleUnload = () => {
     window.location.reload();
@@ -35,7 +33,6 @@ export const ThreeScene = (props: ThreeSceneProps) => {
   };
 
   const { scene, camera, renderer, arena } = useThreeSceneStore();
-  const { clippingPlane, yClip } = useIntroAnimStore();
 
   useEffect(() => {
     if (!arena) return;
@@ -45,8 +42,12 @@ export const ThreeScene = (props: ThreeSceneProps) => {
   }, [arena, scene]);
 
   useEffect(() => {
-    // Convert to store
+    useThreeSceneStore.getState().initializeRenderer();
+    useThreeSceneStore.getState().resizeScene();
     const postProcessing = initPostProcessing({ renderer, scene, camera });
+
+    const fog = new THREE.Fog(0x000000, 0, 200);
+    scene.fog = fog;
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enabled = true;
@@ -56,85 +57,15 @@ export const ThreeScene = (props: ThreeSceneProps) => {
 
     loadAndAddArenaModel();
 
-    const fog = (scene.fog = new THREE.FogExp2(0x000000, 0.1));
-
-    let fadeTime = 0;
-    const fadeDuration = 100;
-
     const animate = (timestamp: number): void => {
       const time = timestamp * 0.001;
       const deltaTime = time - lastTime;
       lastTime = time;
 
-      // Update fade
-      if (fadeTime < fadeDuration) {
-        fadeTime += deltaTime * 40;
-        const t = fadeTime / fadeDuration;
-        const easedT = easeInOutCubic(t);
+      if (!useIntroAnimStore.getState().introAnimDone)
+        introAnimation(deltaTime);
 
-        // Start with high density (black) and decrease to 0 (clear)
-        // const fogDensity = 0.1 * (1 - easedT);
-        const fogDensity = 0.1 - fadeTime / fadeDuration;
-        fog.density = fogDensity;
-      } else if (fog.density !== 0.01) {
-        fog.density = 0.01;
-      }
-
-      if (animOrbit.current) {
-        // Update the camera's angle
-        angle += speed * deltaTime;
-
-        // Reset the angle when it reaches 2*PI
-        if (angle > 2 * Math.PI) {
-          angle = 0;
-          console.log("Resetting angle");
-          console.log("speed: ", speed);
-        }
-
-        // Calculate the new camera position
-        camera.position.x = radius * Math.cos(angle);
-        camera.position.z = radius * Math.sin(angle);
-
-        // Make the camera look at the center of the scene
-        camera.lookAt(0, 3, 0);
-      }
-
-      const { yClip, clippingPlane } = useIntroAnimStore.getState();
-
-      if (yClip > 30 && yClip < 100) {
-        // yClip = 101;
-        useIntroAnimStore.setState({ yClip: 101 });
-
-        const stdMat = new THREE.MeshLambertMaterial({ color: 0xdd4444 });
-
-        postProcessing.bloomPass.strength = 0;
-        arena?.scene.traverse((child) => {
-          (child as THREE.Mesh).material = stdMat;
-          if (arena)
-            applyVideoMaterials({
-              gltf: arena,
-              iceVideoRef: videos.ice.ref,
-              bigmapVideoRef: videos.bigMap.ref,
-            });
-
-          videos.ice.ref.current?.play();
-          // iceVideoRef.current?.play();
-          setPlaying(true);
-          setIntroAnimDone(true);
-        });
-      } else {
-        const newClip = yClip + 0.01 * deltaTime * 300;
-        clippingPlane.constant = newClip;
-        useIntroAnimStore.setState({ yClip: newClip, clippingPlane });
-      }
-
-      if (yClip < 100) updateCamera(deltaTime);
-
-      if (yClip >= 100) {
-        // Add orbit controls
-        controls.enabled = true;
-        controls.update();
-      }
+      if (useThreeSceneStore.getState().animOrbit) orbitCamera(deltaTime);
 
       postProcessing.composer.render();
       requestAnimationFrame(animate);
@@ -148,7 +79,51 @@ export const ThreeScene = (props: ThreeSceneProps) => {
     const duration = 6000;
     let animationTime = 0;
 
+    function introAnimation(deltaTime: number) {
+      const { yClip, clippingPlane } = useIntroAnimStore.getState();
+
+      if (yClip >= 100) {
+        controls.enabled = true;
+        controls.update();
+      }
+
+      if (yClip < 100) updateCamera(deltaTime);
+
+      if (yClip > 30 && yClip < 100) {
+        useIntroAnimStore.setState({ yClip: 101 });
+
+        const stdMat = new THREE.MeshLambertMaterial({ color: 0xdd4444 });
+
+        postProcessing.bloomPass.strength = 0;
+        const { arena } = useThreeSceneStore.getState();
+        arena?.scene.traverse((child) => {
+          (child as THREE.Mesh).material = stdMat;
+          if (arena)
+            applyVideoMaterials({
+              gltf: arena,
+              iceVideoRef: videos.ice.ref,
+              bigmapVideoRef: videos.bigMap.ref,
+            });
+
+          videos.ice.ref.current?.play();
+          setPlaying(true);
+          useIntroAnimStore.setState({ introAnimDone: true });
+        });
+      } else {
+        if (useThreeSceneStore.getState().arena)
+          scene.fog = new THREE.Fog(
+            0x000000,
+            1 * (yClip * 0.1),
+            2 * (yClip * 10)
+          );
+        const newClip = yClip + 0.01 * deltaTime * 100;
+        clippingPlane.constant = newClip;
+        useIntroAnimStore.setState({ yClip: newClip, clippingPlane });
+      }
+    }
+
     function updateCamera(deltaTime: number) {
+      const { yClip } = useIntroAnimStore.getState();
       if (yClip > 15 && camera.position.y > animTarget) {
         animationTime += deltaTime * 1000;
         const t = Math.min(animationTime / duration, 1);
@@ -158,6 +133,25 @@ export const ThreeScene = (props: ThreeSceneProps) => {
         const newY = startY + (animTarget - startY) * smoothT;
         camera.position.set(x, newY, z);
       }
+    }
+
+    function orbitCamera(deltaTime: number) {
+      // Update the camera's angle
+      angle += speed * deltaTime;
+
+      // Reset the angle when it reaches 2*PI
+      if (angle > 2 * Math.PI) {
+        angle = 0;
+        console.log("Resetting angle");
+        console.log("speed: ", speed);
+      }
+
+      // Calculate the new camera position
+      camera.position.x = radius * Math.cos(angle);
+      camera.position.z = radius * Math.sin(angle);
+
+      // Make the camera look at the center of the scene
+      camera.lookAt(0, 3, 0);
     }
 
     function easeInOutCubic(t: number): number {
@@ -187,7 +181,7 @@ export const ThreeScene = (props: ThreeSceneProps) => {
 
   return (
     <>
-      <div ref={containerRef} />;
+      <div ref={containerRef} />
     </>
   );
 };

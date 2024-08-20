@@ -22,6 +22,7 @@ const applyVideoMaterials = (props: {
                 // Create a material with the video texture
                 const videoMaterial = new THREE.MeshBasicMaterial({
                     map: videoTexture,
+                    wireframe: false,
                 });
 
                 // Apply the video material to the object

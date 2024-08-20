@@ -86,7 +86,6 @@ export default function Home() {
           />
           <ThreeScene
             setPlaying={setPlaying}
-            setIntroAnimDone={setIntroAnimDone}
             handleUnloadArena={handleUnloadArena}
             videos={videos}
           />

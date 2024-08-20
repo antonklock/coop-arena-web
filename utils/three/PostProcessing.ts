@@ -22,6 +22,5 @@ export const initPostProcessing = (props: PostProcessingProps) => {
     );
     composer.addPass(bloomPass);
 
-
     return { composer, renderPass, bloomPass };
 }
