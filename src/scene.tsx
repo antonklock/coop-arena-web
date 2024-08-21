@@ -4,22 +4,30 @@ import CoopArenaGLTF from "./models/CoopArenaGLTF";
 
 type SceneProps = {
   iceVideoRef: React.RefObject<HTMLVideoElement>;
-  upperCubeRef: React.RefObject<HTMLVideoElement>;
-  lowerCubeRef: React.RefObject<HTMLVideoElement>;
-  a7Ref: React.RefObject<HTMLVideoElement>;
+  upperCubeVideoRef: React.RefObject<HTMLVideoElement>;
+  lowerCubeVideoRef: React.RefObject<HTMLVideoElement>;
+  a7VideoRef: React.RefObject<HTMLVideoElement>;
+  yttreOvalVideoRef: React.RefObject<HTMLVideoElement>;
 };
 
 export function Scene(props: SceneProps) {
-  const { iceVideoRef, upperCubeRef, lowerCubeRef, a7Ref } = props;
+  const {
+    iceVideoRef,
+    upperCubeVideoRef,
+    lowerCubeVideoRef,
+    a7VideoRef,
+    yttreOvalVideoRef,
+  } = props;
   return (
     <Canvas color={undefined} autoFocus={false}>
       <PerspectiveCamera makeDefault position={[0, 14, -35]} fov={90} />
       <OrbitControls />
       <CoopArenaGLTF
         iceVideoRef={iceVideoRef}
-        upperCubeRef={upperCubeRef}
-        lowerCubeRef={lowerCubeRef}
-        a7Ref={a7Ref}
+        upperCubeVideoRef={upperCubeVideoRef}
+        lowerCubeVideoRef={lowerCubeVideoRef}
+        a7VideoRef={a7VideoRef}
+        yttreOvalVideoRef={yttreOvalVideoRef}
       />
       <pointLight
         visible={true}

@@ -23,9 +23,10 @@ type GLTFResult = GLTF & {
 
 type CoopArenaGLTFProps = {
   iceVideoRef: React.RefObject<HTMLVideoElement>;
-  upperCubeRef: React.RefObject<HTMLVideoElement>;
-  lowerCubeRef: React.RefObject<HTMLVideoElement>;
-  a7Ref: React.RefObject<HTMLVideoElement>;
+  upperCubeVideoRef: React.RefObject<HTMLVideoElement>;
+  lowerCubeVideoRef: React.RefObject<HTMLVideoElement>;
+  a7VideoRef: React.RefObject<HTMLVideoElement>;
+  yttreOvalVideoRef: React.RefObject<HTMLVideoElement>;
 };
 
 export default function CoopArenaGLTF(props: CoopArenaGLTFProps) {
@@ -34,9 +35,16 @@ export default function CoopArenaGLTF(props: CoopArenaGLTFProps) {
   const iceMesh = useRef<THREE.Mesh>(null);
   const upperCubeMesh = useRef<THREE.Mesh>(null);
   const lowerCubeMesh = useRef<THREE.Mesh>(null);
+  const yttreOvalMesh = useRef<THREE.Mesh>(null);
 
   const { nodes } = useLoader(GLTFLoader, url) as GLTFResult;
-  const { iceVideoRef, upperCubeRef, lowerCubeRef, a7Ref } = props;
+  const {
+    iceVideoRef,
+    upperCubeVideoRef,
+    lowerCubeVideoRef,
+    a7VideoRef,
+    yttreOvalVideoRef,
+  } = props;
 
   // Fix initial rotation
   useEffect(() => {
@@ -67,40 +75,55 @@ export default function CoopArenaGLTF(props: CoopArenaGLTFProps) {
   };
 
   useEffect(() => {
-    if (!iceVideoRef.current) return;
-    if (!upperCubeRef.current) return;
-    if (!lowerCubeRef.current) return;
-    if (!a7Group.current) return;
+    // if (!iceVideoRef.current)
+    //   return console.error("iceVideRef.current not found");
+    // if (!upperCubeVideoRef.current)
+    //   return console.error("upperCubeRef.current not found");
+    // if (!lowerCubeVideoRef.current)
+    //   return console.error("lowerCubeRef.current not found");
+    // if (!a7Group.current) return console.error("a7Group.current not found");
+    // if (!yttreOvalVideoRef.current)
+    //   return console.error("yttreOvalVideoRef.current not found");
 
-    if (iceMesh.current?.type !== "Mesh") return;
-    if (upperCubeMesh.current?.type !== "Mesh") return;
-    if (lowerCubeMesh.current?.type !== "Mesh") return;
+    // if (iceMesh.current?.type !== "Mesh")
+    //   return console.error("iceMesh.current is not a mesh");
+    // if (upperCubeMesh.current?.type !== "Mesh")
+    //   return console.error("upperCubeMesh.current is not a mesh");
+    // if (lowerCubeMesh.current?.type !== "Mesh")
+    //   return console.error("lowerCubeMesh.current is not a mesh");
+    // if (yttreOvalMesh.current?.type !== "Mesh")
+    //   return console.error("yttreOvalMesh.current is not a mesh");
 
     const arenaScreens = [
       {
         name: "ICE",
-        videoElementRef: iceVideoRef.current,
-        arenaMesh: iceMesh.current,
+        videoElementRef: iceVideoRef.current as HTMLVideoElement,
+        arenaMesh: iceMesh.current as THREE.Mesh,
       },
       {
         name: "Upper cube",
-        videoElementRef: upperCubeRef.current,
-        arenaMesh: upperCubeMesh.current,
+        videoElementRef: upperCubeVideoRef.current as HTMLVideoElement,
+        arenaMesh: upperCubeMesh.current as THREE.Mesh,
       },
       {
         name: "Lower cube",
-        videoElementRef: lowerCubeRef.current,
-        arenaMesh: lowerCubeMesh.current,
+        videoElementRef: lowerCubeVideoRef.current as HTMLVideoElement,
+        arenaMesh: lowerCubeMesh.current as THREE.Mesh,
+      },
+      {
+        name: "Yttre oval",
+        videoElementRef: yttreOvalVideoRef.current as HTMLVideoElement,
+        arenaMesh: yttreOvalMesh.current as THREE.Mesh,
       },
     ];
 
-    a7Group.current.traverse((child) => {
+    a7Group.current?.traverse((child) => {
       if (child.type !== "Mesh") return;
-      if (!a7Ref.current) return;
+      if (!a7VideoRef.current) return;
 
       const a7ArenaScreen = {
         name: `A7_${child.id}`,
-        videoElementRef: a7Ref.current,
+        videoElementRef: a7VideoRef.current,
         arenaMesh: child as THREE.Mesh,
       };
 
@@ -111,15 +134,16 @@ export default function CoopArenaGLTF(props: CoopArenaGLTFProps) {
   });
 
   const handleStartVideo = () => {
-    if (!iceVideoRef.current) return;
-    if (!upperCubeRef.current) return;
-    if (!lowerCubeRef.current) return;
-    if (!a7Ref.current) return;
+    // if (!iceVideoRef.current) return;
+    // if (!upperCubeVideoRef.current) return;
+    // if (!lowerCubeVideoRef.current) return;
+    // if (!a7VideoRef.current) return;
 
-    iceVideoRef.current.play();
-    upperCubeRef.current.play();
-    lowerCubeRef.current.play();
-    a7Ref.current.play();
+    iceVideoRef.current?.play();
+    upperCubeVideoRef.current?.play();
+    lowerCubeVideoRef.current?.play();
+    a7VideoRef.current?.play();
+    yttreOvalVideoRef.current?.play();
   };
 
   return (
@@ -302,6 +326,7 @@ export default function CoopArenaGLTF(props: CoopArenaGLTFProps) {
         receiveShadow
         geometry={nodes.Oval_outside.geometry}
         material={nodes.Oval_outside.material}
+        ref={yttreOvalMesh}
       />
       <mesh
         name={"Rink"}
