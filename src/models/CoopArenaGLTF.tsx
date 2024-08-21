@@ -1,10 +1,16 @@
-import React, { useEffect, useRef } from "react";
+import React, { RefObject, useEffect, useRef } from "react";
 import { useLoader } from "@react-three/fiber";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import * as THREE from "three";
 
-const url = "/models/arena02.glb";
+const url = process.env.NEXT_PUBLIC_ARENA_MODEL as string;
+
+type ArenaScreen = {
+  name: string;
+  videoElementRef: HTMLVideoElement;
+  arenaMesh: THREE.Mesh;
+};
 
 type GLTFResult = GLTF & {
   nodes: {
@@ -17,40 +23,186 @@ type GLTFResult = GLTF & {
 
 type CoopArenaGLTFProps = {
   iceVideoRef: React.RefObject<HTMLVideoElement>;
+  upperCubeRef: React.RefObject<HTMLVideoElement>;
+  lowerCubeRef: React.RefObject<HTMLVideoElement>;
+  a7Ref: React.RefObject<HTMLVideoElement>;
 };
 
 export default function CoopArenaGLTF(props: CoopArenaGLTFProps) {
-  const groupRef = useRef<THREE.Group>(null);
+  const arenaGroupRef = useRef<THREE.Group>(null);
+  const a7Group = useRef<THREE.Group>(null);
   const iceMesh = useRef<THREE.Mesh>(null);
+  const upperCubeMesh = useRef<THREE.Mesh>(null);
+  const lowerCubeMesh = useRef<THREE.Mesh>(null);
+
   const { nodes } = useLoader(GLTFLoader, url) as GLTFResult;
-  const { iceVideoRef } = props;
+  const { iceVideoRef, upperCubeRef, lowerCubeRef, a7Ref } = props;
 
   // Fix initial rotation
   useEffect(() => {
-    if (groupRef.current) {
-      groupRef.current.rotation.set(Math.PI / -2, 0, 0);
+    if (arenaGroupRef.current) {
+      arenaGroupRef.current.rotation.set(0, Math.PI / -2, 0);
     }
   }, []);
 
-  useEffect(() => {
-    if (!iceVideoRef?.current)
-      return () => console.log("iceVideoRef.current is undefined");
-    const videoTexture = new THREE.VideoTexture(iceVideoRef.current);
-    videoTexture.format = THREE.RGBFormat;
+  const applyVideoMaterials = (arenaScreens: ArenaScreen[]) => {
+    arenaScreens.map((arenaScreen) => {
+      if (!arenaScreen.videoElementRef)
+        return console.warn(
+          `videoElementRef for ${arenaScreen.name} not found!`
+        );
+      const videoTexture = new THREE.VideoTexture(arenaScreen.videoElementRef);
+      videoTexture.format = THREE.RGBFormat;
 
-    const videoMaterial = new THREE.MeshBasicMaterial({
-      map: videoTexture,
+      const videoMaterial = new THREE.MeshBasicMaterial({
+        map: videoTexture,
+      });
+
+      if (!arenaScreen.arenaMesh)
+        return console.warn(`arenaMesh for ${arenaScreen.name} not found!`);
+      arenaScreen.arenaMesh.material = videoMaterial;
     });
 
-    if (!iceMesh?.current)
-      return () => console.log("iceMesh.current is undefined");
-    console.log("Setting iceMesh material to videoMaterial");
-    iceMesh.current.material = videoMaterial;
+    handleStartVideo();
+  };
+
+  useEffect(() => {
+    if (!iceVideoRef.current) return;
+    if (!upperCubeRef.current) return;
+    if (!lowerCubeRef.current) return;
+    if (!a7Group.current) return;
+
+    if (iceMesh.current?.type !== "Mesh") return;
+    if (upperCubeMesh.current?.type !== "Mesh") return;
+    if (lowerCubeMesh.current?.type !== "Mesh") return;
+
+    const arenaScreens = [
+      {
+        name: "ICE",
+        videoElementRef: iceVideoRef.current,
+        arenaMesh: iceMesh.current,
+      },
+      {
+        name: "Upper cube",
+        videoElementRef: upperCubeRef.current,
+        arenaMesh: upperCubeMesh.current,
+      },
+      {
+        name: "Lower cube",
+        videoElementRef: lowerCubeRef.current,
+        arenaMesh: lowerCubeMesh.current,
+      },
+    ];
+
+    a7Group.current.traverse((child) => {
+      if (child.type !== "Mesh") return;
+      if (!a7Ref.current) return;
+
+      const a7ArenaScreen = {
+        name: `A7_${child.id}`,
+        videoElementRef: a7Ref.current,
+        arenaMesh: child as THREE.Mesh,
+      };
+
+      arenaScreens.push(a7ArenaScreen);
+    });
+
+    applyVideoMaterials(arenaScreens);
+  });
+
+  const handleStartVideo = () => {
+    if (!iceVideoRef.current) return;
+    if (!upperCubeRef.current) return;
+    if (!lowerCubeRef.current) return;
+    if (!a7Ref.current) return;
+
     iceVideoRef.current.play();
-  }, []);
+    upperCubeRef.current.play();
+    lowerCubeRef.current.play();
+    a7Ref.current.play();
+  };
 
   return (
-    <group ref={groupRef} dispose={null}>
+    <group ref={arenaGroupRef} dispose={null}>
+      <group ref={a7Group} dispose={null}>
+        <mesh
+          name={"A71"}
+          castShadow
+          receiveShadow
+          geometry={nodes.A71.geometry}
+          material={nodes.A71.material}
+        />
+        <mesh
+          name={"A72"}
+          castShadow
+          receiveShadow
+          geometry={nodes.A72.geometry}
+          material={nodes.A72.material}
+        />
+        <mesh
+          name={"A73"}
+          castShadow
+          receiveShadow
+          geometry={nodes.A73.geometry}
+          material={nodes.A73.material}
+        />
+        <mesh
+          name={"A74"}
+          castShadow
+          receiveShadow
+          geometry={nodes.A74.geometry}
+          material={nodes.A74.material}
+        />
+        <mesh
+          name={"A75"}
+          castShadow
+          receiveShadow
+          geometry={nodes.A75.geometry}
+          material={nodes.A75.material}
+        />
+        <mesh
+          name={"A76"}
+          castShadow
+          receiveShadow
+          geometry={nodes.A76.geometry}
+          material={nodes.A76.material}
+        />
+        <mesh
+          name={"A77"}
+          castShadow
+          receiveShadow
+          geometry={nodes.A77.geometry}
+          material={nodes.A77.material}
+        />
+        <mesh
+          name={"A78"}
+          castShadow
+          receiveShadow
+          geometry={nodes.A78.geometry}
+          material={nodes.A78.material}
+        />
+        <mesh
+          name={"A79"}
+          castShadow
+          receiveShadow
+          geometry={nodes.A79.geometry}
+          material={nodes.A79.material}
+        />
+        <mesh
+          name={"A710"}
+          castShadow
+          receiveShadow
+          geometry={nodes.A710.geometry}
+          material={nodes.A710.material}
+        />
+        <mesh
+          name={"A711"}
+          castShadow
+          receiveShadow
+          geometry={nodes.A711.geometry}
+          material={nodes.A711.material}
+        />
+      </group>
       <mesh
         name={"A0"}
         castShadow
@@ -78,83 +230,6 @@ export default function CoopArenaGLTF(props: CoopArenaGLTFProps) {
         receiveShadow
         geometry={nodes.A9.geometry}
         material={nodes.A9.material}
-      />
-      <mesh
-        name={"A71"}
-        castShadow
-        receiveShadow
-        geometry={nodes.A71.geometry}
-        material={nodes.A71.material}
-      />
-      <mesh
-        name={"A72"}
-        castShadow
-        receiveShadow
-        geometry={nodes.A72.geometry}
-        material={nodes.A72.material}
-      />
-      <mesh
-        name={"A73"}
-        castShadow
-        receiveShadow
-        geometry={nodes.A73.geometry}
-        material={nodes.A73.material}
-      />
-      <mesh
-        name={"A74"}
-        castShadow
-        receiveShadow
-        geometry={nodes.A74.geometry}
-        material={nodes.A74.material}
-      />
-      <mesh
-        name={"A75"}
-        castShadow
-        receiveShadow
-        geometry={nodes.A75.geometry}
-        material={nodes.A75.material}
-      />
-      <mesh
-        name={"A76"}
-        castShadow
-        receiveShadow
-        geometry={nodes.A76.geometry}
-        material={nodes.A76.material}
-      />
-      <mesh
-        name={"A77"}
-        castShadow
-        receiveShadow
-        geometry={nodes.A77.geometry}
-        material={nodes.A77.material}
-      />
-      <mesh
-        name={"A78"}
-        castShadow
-        receiveShadow
-        geometry={nodes.A78.geometry}
-        material={nodes.A78.material}
-      />
-      <mesh
-        name={"A79"}
-        castShadow
-        receiveShadow
-        geometry={nodes.A79.geometry}
-        material={nodes.A79.material}
-      />
-      <mesh
-        name={"A710"}
-        castShadow
-        receiveShadow
-        geometry={nodes.A710.geometry}
-        material={nodes.A710.material}
-      />
-      <mesh
-        name={"A711"}
-        castShadow
-        receiveShadow
-        geometry={nodes.A711.geometry}
-        material={nodes.A711.material}
       />
       <mesh
         name={"Chairs"}
@@ -198,6 +273,7 @@ export default function CoopArenaGLTF(props: CoopArenaGLTFProps) {
         receiveShadow
         geometry={nodes.Lower_cube.geometry}
         material={nodes.Lower_cube.material}
+        ref={lowerCubeMesh}
       />
       <mesh
         name={"Goal_H"}
@@ -254,16 +330,18 @@ export default function CoopArenaGLTF(props: CoopArenaGLTFProps) {
         receiveShadow
         geometry={nodes.Upper_cube.geometry}
         material={nodes.Upper_cube.material}
+        ref={upperCubeMesh}
       />
       <mesh
         name={"Ceiling"}
         castShadow
         receiveShadow
-        geometry={nodes.ceiling.geometry}
-        material={nodes.ceiling.material}
+        geometry={nodes.Ceiling.geometry}
+        material={nodes.Ceiling.material}
       />
     </group>
   );
 }
 
-useLoader.preload(GLTFLoader, url);
+if (url) useLoader.preload(GLTFLoader, url);
+else console.warn("Can't find arena model. Check import url.");

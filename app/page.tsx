@@ -1,11 +1,8 @@
 "use client";
 
-import { Menu } from "@/components/Menu/Menu";
 import { StartPage } from "@/components/StartPage/StartPage";
-import { ThreeScene } from "@/components/ThreeScene";
 import { VideoElements } from "@/components/Videos/VideoElements";
 import { useState, useRef, useEffect } from "react";
-import CoopArenaScene from "../three/CoopArenaScene";
 import { Scene } from "@/src/scene";
 
 export default function Home() {
@@ -14,13 +11,17 @@ export default function Home() {
   const [a7Url, setA7Url] = useState("");
   const [iceUrl, setIceUrl] = useState("");
   const [upperCubeUrl, setUpperCubeUrl] = useState("");
+  const [lowerCubeUrl, setLowerCubeUrl] = useState("");
 
   // MAIN MENU //////////////////////////
   const [introAnimDone, setIntroAnimDone] = useState(false);
   const [playing, setPlaying] = useState(false);
   const iceVideoRef = useRef<HTMLVideoElement>(null);
   const bigmapVideoRef = useRef<HTMLVideoElement>(null);
+  const upperCubeRef = useRef<HTMLVideoElement>(null);
+  const lowerCubeRef = useRef<HTMLVideoElement>(null);
   const yttreOvalVideoRef = useRef<HTMLVideoElement>(null);
+  const a7Ref = useRef<HTMLVideoElement>(null);
   //////////////////////////////////////
 
   const animOrbit = useRef(true);
@@ -35,42 +36,28 @@ export default function Home() {
     }, 1000);
   };
 
-  const handleUnloadArena = () => {
-    setStarted(false);
-  };
+  // const handleUnloadArena = () => {
+  //   setStarted(false);
+  // };
 
-  const setVideoUrls = (ice: string, upperCube: string, a7: string) => {
-    setIceUrl(ice);
-    setUpperCubeUrl(upperCube);
-    setA7Url(a7);
-  };
+  // const setVideoUrls = (ice: string, upperCube: string, a7: string) => {
+  //   setIceUrl(ice);
+  //   setUpperCubeUrl(upperCube);
+  //   setA7Url(a7);
+  // };
 
-  useEffect(() => {
-    if (process.env.NEXT_PUBLIC_ICE_URL)
-      setIceUrl(process.env.NEXT_PUBLIC_ICE_URL);
-  }, []);
+  // useEffect(() => {
+  //   if (process.env.NEXT_PUBLIC_ICE_URL)
+  //     setIceUrl(process.env.NEXT_PUBLIC_ICE_URL);
+  // }, []);
 
   const videos = {
-    ice: {
-      url: iceUrl,
-      ref: iceVideoRef,
-    },
-    upperCube: {
-      url: upperCubeUrl,
-      ref: bigmapVideoRef,
-    },
-    a7: {
-      url: a7Url,
-      ref: yttreOvalVideoRef,
-    },
-    bigMap: {
-      url: "",
-      ref: bigmapVideoRef,
-    },
-    yttreOval: {
-      url: "",
-      ref: yttreOvalVideoRef,
-    },
+    ice: iceVideoRef,
+    upperCube: upperCubeRef,
+    lowerCube: lowerCubeRef,
+    a7: a7Ref,
+    bigMap: bigmapVideoRef,
+    yttreOval: yttreOvalVideoRef,
   };
 
   return (
@@ -95,7 +82,12 @@ export default function Home() {
 
           <div style={{ width: "100vw", height: "100vh" }}>
             {/* <CoopArenaScene /> */}
-            <Scene iceVideoRef={iceVideoRef} />
+            <Scene
+              iceVideoRef={iceVideoRef}
+              upperCubeRef={upperCubeRef}
+              lowerCubeRef={lowerCubeRef}
+              a7Ref={a7Ref}
+            />
           </div>
 
           <VideoElements videos={videos} />
